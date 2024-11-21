@@ -242,3 +242,104 @@ def kalman_filter(previous_points, prediction_range):
         x = x_pred
 
     return predictions
+
+
+import numpy as np
+
+def bezier_curve_predictor(previous_points, prediction_range):
+    """
+    Predicts future points using Bézier curve fitting with extrapolation.
+    
+    Parameters:
+        previous_points (list of tuples): List of (x, y) coordinates.
+        prediction_range (int): Number of future points to predict.
+    
+    Returns:
+        list of tuples: Predicted (x, y) points.
+    """
+    def bezier_curve(t, control_points):
+        """Evaluates the Bézier curve at parameter t given control points."""
+        n = len(control_points) - 1
+        return sum(
+            (np.math.comb(n, i) * (1 - t) ** (n - i) * t ** i * np.array(control_points[i]))
+            for i in range(n + 1)
+        )
+    
+    # Convert previous points to numpy array for easier manipulation
+    previous_points = np.array(previous_points)
+    
+    # Generate control points for extrapolation
+    # Add a future control point to extend the curve directionally
+    last_vector = previous_points[-1] - previous_points[-2]  # Vector between the last two points
+    future_control_point = previous_points[-1] + last_vector  # Extrapolated control point
+    control_points = np.vstack([previous_points, future_control_point])  # Add to control points
+    
+    prediction_range = prediction_range
+    
+    # Parameterize the curve using equally spaced t values for prediction
+    t_values = np.linspace(1, 1 + prediction_range / len(previous_points), prediction_range)
+    
+    # Fit Bézier curve using the updated control points
+    predictions = [bezier_curve(t, control_points) for t in t_values]
+    
+    # Return predictions as a list of tuples
+    return [tuple(point) for point in predictions]
+
+
+import numpy as np
+from collections import defaultdict
+
+def markov_model_predictor(previous_points, prediction_range):
+    """
+    Predicts future points using a Markov model based on observed transitions.
+    
+    Parameters:
+        previous_points (list of tuples): List of (x, y) coordinates.
+        prediction_range (int): Number of future points to predict.
+    
+    Returns:
+        list of tuples: Predicted (x, y) points.
+    """
+    # Convert points to numpy array
+    previous_points = np.array(previous_points)
+    
+    # Compute transitions between consecutive points
+    transitions = previous_points[1:] - previous_points[:-1]
+    
+    # Calculate transition probabilities
+    transition_dict = defaultdict(list)
+    for i in range(len(transitions) - 1):
+        key = tuple(transitions[i])
+        next_step = tuple(transitions[i + 1])
+        transition_dict[key].append(next_step)
+    
+    # Normalize transition probabilities
+    for key in transition_dict:
+        unique_steps, counts = np.unique(transition_dict[key], axis=0, return_counts=True)
+        transition_dict[key] = {
+            tuple(step): count / sum(counts) for step, count in zip(unique_steps, counts)
+        }
+    
+    # Start prediction from the last observed point
+    current_position = previous_points[-1]
+    current_transition = tuple(transitions[-1])
+    
+    predictions = []
+    
+    for _ in range(prediction_range):
+        # Sample the next transition based on probabilities
+        if current_transition in transition_dict:
+            possible_transitions = list(transition_dict[current_transition].keys())
+            probabilities = list(transition_dict[current_transition].values())
+            next_transition = np.array(possible_transitions[np.random.choice(len(possible_transitions), p=probabilities)])
+        else:
+            # Default to the last transition if no match is found
+            next_transition = np.array(current_transition)
+        
+        # Update position and transition
+        current_position = current_position + next_transition
+        current_transition = tuple(next_transition)
+        
+        predictions.append(tuple(current_position))
+    
+    return predictions

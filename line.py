@@ -56,10 +56,10 @@ for frame in range(n_frames):
     predicted_positions_ball_2 = []
 
     if len(history_ball_1) >= minimum_req:
-        predicted_positions_ball_1 = predictors.ekf(np.array(history_ball_1).tolist(), prediction_range)
+        predicted_positions_ball_1 = predictors.markov_model_predictor(np.array(history_ball_1).tolist(), prediction_range)
 
     if len(history_ball_2) >= minimum_req:
-        predicted_positions_ball_2 = predictors.ekf(np.array(history_ball_2).tolist(), prediction_range)
+        predicted_positions_ball_2 = predictors.markov_model_predictor(np.array(history_ball_2).tolist(), prediction_range)
 
     # Check for predicted collisions
     if predicted_positions_ball_1 and predicted_positions_ball_2:
