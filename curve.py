@@ -76,10 +76,10 @@ for frame in range(n_frames):
     predicted_positions_ball_2 = []
 
     if len(history_ball_1) >= minimum_req:
-        predicted_positions_ball_1 = predictors.ekf(np.array(history_ball_1).tolist(), prediction_range)
+        predicted_positions_ball_1 = predictors.polynomial_regression_predictor(np.array(history_ball_1).tolist(), prediction_range)
 
     if len(history_ball_2) >= minimum_req:
-        predicted_positions_ball_2 = predictors.ekf(np.array(history_ball_2).tolist(), prediction_range)
+        predicted_positions_ball_2 = predictors.polynomial_regression_predictor(np.array(history_ball_2).tolist(), prediction_range)
 
     # Check for predicted collisions
     if predicted_positions_ball_1 and predicted_positions_ball_2:
@@ -92,11 +92,11 @@ for frame in range(n_frames):
                         print(f"True positive at frame: {frame}")
 
     # Draw predicted positions
-    #for pos in predicted_positions_ball_1:
-    #    draw.ellipse((pos[0] - 3, pos[1] - 3, pos[0] + 3, pos[1] + 3), fill='darkred')
+    for pos in predicted_positions_ball_1:
+        draw.ellipse((pos[0] - 3, pos[1] - 3, pos[0] + 3, pos[1] + 3), fill='darkred')
 
-    #for pos in predicted_positions_ball_2:
-    #    draw.ellipse((pos[0] - 3, pos[1] - 3, pos[0] + 3, pos[1] + 3), fill='darkblue')
+    for pos in predicted_positions_ball_2:
+        draw.ellipse((pos[0] - 3, pos[1] - 3, pos[0] + 3, pos[1] + 3), fill='darkblue')
 
     # Check for actual collisions
     actual_distance = np.linalg.norm(np.array(ball_1_pos) - np.array(ball_2_pos))
