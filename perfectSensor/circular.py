@@ -5,7 +5,9 @@ import predictors  # Import the EKF function from predictors.py
 import random
 
 # Parameters
-speed = 2  # Speed of movement (pixels per frame)
+radius = 200  # Circle radius (pixels)
+center = (250, 250)  # Center of the circle
+speed = 0.01  # Angular speed in radians per frame
 n_frames = 800  # Total number of frames
 fps = 30  # Frames per second
 video_size = (500, 500)  # Video resolution
@@ -14,10 +16,6 @@ history_limit = 30  # Number of previous positions to store
 prediction_range = 15  # Number of future positions to predict
 minimum_req = 3
 collision_distance = 10  # Distance threshold for collision
-
-width, height = video_size
-
-noise_strenght = 20 * 0.15
 
 # Collision logs
 predicted_collision_frames = []
@@ -31,21 +29,28 @@ video_writer = cv2.VideoWriter(output_path, fourcc, fps, video_size)
 history_ball_1 = []
 history_ball_2 = []
 
+
 for frame in range(n_frames):
     # Create a blank white image using PIL
     img = Image.new('RGB', video_size, 'black')
     draw = ImageDraw.Draw(img)
 
+    # Calculate angles for the current frame
+    angle1 = speed * frame + 0.03
+    angle2 = -speed * frame - 0.03
+
     # Compute positions of the two balls
-    ball1_pos = (int(speed * frame), int(speed * frame))  # Top-left to bottom-right
-    ball2_pos = (width - int(speed * frame), height - int(speed * frame))  # Bottom-right to top-left
+    ball1_pos = (center[0] + int(radius * np.cos(angle1)),
+                 center[1] + int(radius * np.sin(angle1)))
+    ball2_pos = (center[0] + int(radius * np.cos(angle2)),
+                 center[1] + int(radius * np.sin(angle2)))
 
     # Add current positions to history
     if (frame % 10 == 0):
         if (random.randint(0,10) != 0 or 1 == 1):
-            history_ball_1.append((ball1_pos[0] + random.randrange(0,noise_strenght),ball1_pos[1] + random.randrange(0,noise_strenght)))
+            history_ball_1.append(ball1_pos)
         if (random.randint(0,10) != 0 or 1 == 1):
-            history_ball_2.append((ball2_pos[0] + random.randrange(0,noise_strenght),ball2_pos[1] + random.randrange(0,noise_strenght)))
+            history_ball_2.append(ball2_pos)
 
     # Limit history to the last `history_limit` positions
     if len(history_ball_1) > history_limit:
@@ -58,20 +63,21 @@ for frame in range(n_frames):
     predicted_positions_ball_2 = []
 
     if len(history_ball_1) >= minimum_req:
-        predicted_positions_ball_1 = predictors.polynomial_regression_predictor(np.array(history_ball_1).tolist(), prediction_range)
+        predicted_positions_ball_1 = predictors.kalman_filter(np.array(history_ball_1).tolist(), prediction_range)
 
     if len(history_ball_2) >= minimum_req:
-        predicted_positions_ball_2 = predictors.polynomial_regression_predictor(np.array(history_ball_2).tolist(), prediction_range)
+        predicted_positions_ball_2 = predictors.kalman_filter(np.array(history_ball_2).tolist(), prediction_range)
 
     # Check for predicted collisions
     if predicted_positions_ball_1 and predicted_positions_ball_2:
         for p1 in predicted_positions_ball_1:
             for p2 in predicted_positions_ball_2:
-                if (width / 2 - 10 <= p1[0] <= width / 2 + 10 and height / 2 - 10 <= p1[1] <= height / 2 + 10):
+                if (35 <= p1[0] <= 65 and 235 <= p1[1] <= 265):
                     distance = np.linalg.norm(np.array(p1) - np.array(p2))
                     if distance < collision_distance and frame not in predicted_collision_frames:
                         predicted_collision_frames.append(frame)
                         print(f"True positive at frame: {frame}")
+
 
     # Draw predicted positions
     for pos in predicted_positions_ball_1:
@@ -119,6 +125,5 @@ video_writer.release()
 
 # Print collision logs
 print("Predicted Collision Frames:", predicted_collision_frames)
-print("Result: " , str(predicted_collision_frames[0]))
 print("Actual Collision Frames:", actual_collision_frames)
 print(f"Video saved as {output_path}")

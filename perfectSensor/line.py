@@ -9,15 +9,13 @@ speed = 2  # Speed of movement (pixels per frame)
 n_frames = 800  # Total number of frames
 fps = 30  # Frames per second
 video_size = (500, 500)  # Video resolution
-output_path = "out.mp4"  # Output video file
+output_path = "diagonal_out.mp4"  # Output video file
 history_limit = 30  # Number of previous positions to store
 prediction_range = 15  # Number of future positions to predict
 minimum_req = 3
 collision_distance = 10  # Distance threshold for collision
 
 width, height = video_size
-
-noise_strenght = 20 * 0.15
 
 # Collision logs
 predicted_collision_frames = []
@@ -41,11 +39,11 @@ for frame in range(n_frames):
     ball2_pos = (width - int(speed * frame), height - int(speed * frame))  # Bottom-right to top-left
 
     # Add current positions to history
-    if (frame % 10 == 0):
-        if (random.randint(0,10) != 0 or 1 == 1):
-            history_ball_1.append((ball1_pos[0] + random.randrange(0,noise_strenght),ball1_pos[1] + random.randrange(0,noise_strenght)))
-        if (random.randint(0,10) != 0 or 1 == 1):
-            history_ball_2.append((ball2_pos[0] + random.randrange(0,noise_strenght),ball2_pos[1] + random.randrange(0,noise_strenght)))
+    if frame % 10 == 0:
+        if random.randint(0, 10) != 0 or 1 == 1:
+            history_ball_1.append(ball1_pos)
+        if random.randint(0, 10) != 0 or 1 == 1:
+            history_ball_2.append(ball2_pos)
 
     # Limit history to the last `history_limit` positions
     if len(history_ball_1) > history_limit:
@@ -58,10 +56,10 @@ for frame in range(n_frames):
     predicted_positions_ball_2 = []
 
     if len(history_ball_1) >= minimum_req:
-        predicted_positions_ball_1 = predictors.polynomial_regression_predictor(np.array(history_ball_1).tolist(), prediction_range)
+        predicted_positions_ball_1 = predictors.markov_model_predictor(np.array(history_ball_1).tolist(), prediction_range)
 
     if len(history_ball_2) >= minimum_req:
-        predicted_positions_ball_2 = predictors.polynomial_regression_predictor(np.array(history_ball_2).tolist(), prediction_range)
+        predicted_positions_ball_2 = predictors.markov_model_predictor(np.array(history_ball_2).tolist(), prediction_range)
 
     # Check for predicted collisions
     if predicted_positions_ball_1 and predicted_positions_ball_2:
@@ -119,6 +117,5 @@ video_writer.release()
 
 # Print collision logs
 print("Predicted Collision Frames:", predicted_collision_frames)
-print("Result: " , str(predicted_collision_frames[0]))
 print("Actual Collision Frames:", actual_collision_frames)
 print(f"Video saved as {output_path}")

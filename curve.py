@@ -11,13 +11,17 @@ speed_ball_2 = 1  # Speed of Ball 2
 n_frames = 800  # Total number of frames
 fps = 30  # Frames per second
 video_size = (400, 400)  # Video resolution
-output_path = "curved_trajectory_collision.mp4"  # Output video file
+output_path = "out.mp4"  # Output video file
 history_limit = 30  # Number of previous positions to store
 prediction_range = 15  # Number of future positions to predict
 minimum_req = 3
 collision_distance = 20  # Distance threshold for collision
 angle = 0.02
 width, height = video_size
+
+# 15% of ball size
+noise_strenght = 20 * 0.15
+
 
 # Collision logs
 predicted_collision_frames = []
@@ -61,9 +65,10 @@ for frame in range(n_frames):
     # Add current positions to history
     if frame % 10 == 0:
         if random.randint(0, 10) != 0 or 1 == 1:
-            history_ball_1.append(tuple(ball_1_pos))
+            
+            history_ball_1.append(tuple((ball_1_pos[0] + random.randrange(0,noise_strenght),ball_1_pos[1] + random.randrange(0,noise_strenght))))
         if random.randint(0, 10) != 0 or 1 == 1:
-            history_ball_2.append(tuple(ball_2_pos))
+            history_ball_2.append(tuple((ball_2_pos[0] + random.randrange(0,noise_strenght),ball_2_pos[1] + random.randrange(0,noise_strenght))))
 
     # Limit history to the last `history_limit` positions
     if len(history_ball_1) > history_limit:
@@ -76,10 +81,10 @@ for frame in range(n_frames):
     predicted_positions_ball_2 = []
 
     if len(history_ball_1) >= minimum_req:
-        predicted_positions_ball_1 = predictors.polynomial_regression_predictor(np.array(history_ball_1).tolist(), prediction_range)
+        predicted_positions_ball_1 = predictors.ekf(np.array(history_ball_1).tolist(), prediction_range)
 
     if len(history_ball_2) >= minimum_req:
-        predicted_positions_ball_2 = predictors.polynomial_regression_predictor(np.array(history_ball_2).tolist(), prediction_range)
+        predicted_positions_ball_2 = predictors.ekf(np.array(history_ball_2).tolist(), prediction_range)
 
     # Check for predicted collisions
     if predicted_positions_ball_1 and predicted_positions_ball_2:

@@ -21,6 +21,8 @@ collision_distance = 10  # Distance threshold for collision
 predicted_collision_frames = []
 actual_collision_frames = []
 
+noise_strenght = 20 * 0.15
+
 # Create a blank video writer with OpenCV
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
 video_writer = cv2.VideoWriter(output_path, fourcc, fps, video_size)
@@ -48,9 +50,9 @@ for frame in range(n_frames):
     # Add current positions to history
     if (frame % 10 == 0):
         if (random.randint(0,10) != 0 or 1 == 1):
-            history_ball_1.append(ball1_pos)
+            history_ball_1.append((ball1_pos[0] + random.randrange(0,noise_strenght),ball1_pos[1] + random.randrange(0,noise_strenght)))
         if (random.randint(0,10) != 0 or 1 == 1):
-            history_ball_2.append(ball2_pos)
+            history_ball_2.append((ball2_pos[0] + random.randrange(0,noise_strenght),ball2_pos[1] + random.randrange(0,noise_strenght)))
 
     # Limit history to the last `history_limit` positions
     if len(history_ball_1) > history_limit:
