@@ -1,0 +1,5 @@
+Number of detected objects: 32
+Number of coordinates detected: 1275
+Number of failures: 211
+Percentage of failures: 14.199192462987886
+AVG consecutive fails: 3.6379310344827585
